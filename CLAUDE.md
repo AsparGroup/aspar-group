@@ -4,6 +4,7 @@ This is the canonical repository shared by Claude Code, ChatGPT and future ASPAR
 
 ## Mandatory reading order
 Before substantial work:
+0. Read `STATE_ROUTER.md`, then the real master file it points to (`ETAT_LIVE_ASPAR.md` on Drive) — it holds the real operational facts (brand colors, prices, contacts, legal structure) that nothing in this repo duplicates. Never treat this repo alone as sufficient for those facts.
 1. Read `ASPAR_CONTEXT.md`.
 2. Read `CURRENT_STATE.md`.
 3. Read `WORKBOARD.md`.
