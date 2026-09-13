@@ -49,6 +49,7 @@ def build_study_graph(checkpointer=None):
     builder = StateGraph(StudyState)
     builder.add_node("phase_sourcing", nodes.phase_sourcing)
     builder.add_node("phase_dimensionnement", nodes.phase_dimensionnement)
+    builder.add_node("generate_3d_visualization", nodes.generate_3d_visualization)
     builder.add_node("phase_capex", nodes.phase_capex)
     builder.add_node("phase_tarification", nodes.phase_tarification)
     builder.add_node("phase_score_marche", nodes.phase_score_marche)
@@ -61,8 +62,10 @@ def build_study_graph(checkpointer=None):
         "phase_sourcing", _route, {"pass": "phase_dimensionnement", "stop": "block"}
     )
     builder.add_conditional_edges(
-        "phase_dimensionnement", _route, {"pass": "phase_capex", "stop": "block"}
+        "phase_dimensionnement", _route, {"pass": "generate_3d_visualization", "stop": "block"}
     )
+    # Le rendu 3D est un livrable, pas un gate — succès ou échec, l'étude continue.
+    builder.add_edge("generate_3d_visualization", "phase_capex")
     builder.add_conditional_edges(
         "phase_capex", _route, {"pass": "phase_tarification", "stop": "block"}
     )
