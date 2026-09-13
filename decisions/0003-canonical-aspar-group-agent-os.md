@@ -4,10 +4,10 @@
 **Date:** 2026-09-12
 
 ## Context
-Recent ASPAR work was split across `mynotoriastudio-cmd/Notoria-studio`, branches inside `ASPAR-SOLUTIONS/aspar-group`, GitHub Projects and Claude-specific agent files. This created multiple competing locations for shared memory and orchestration.
+Recent ASPAR work was split across `mynotoriastudio-cmd/Notoria-studio`, branches inside `AsparGroup/aspar-group`, GitHub Projects and Claude-specific agent files. This created multiple competing locations for shared memory and orchestration.
 
 ## Decision
-`ASPAR-SOLUTIONS/aspar-group` is the canonical shared repository for Claude Code, ChatGPT and future ASPAR agents.
+`AsparGroup/aspar-group` is the canonical shared repository for Claude Code, ChatGPT and future ASPAR agents.
 
 Within this repository:
 - `agent-os/` is the active shared execution/orchestration area;
@@ -27,4 +27,4 @@ No second canonical orchestration repository should be created without a later A
 
 ## Migration provenance
 - Verified gate source: `mynotoriastudio-cmd/Notoria-studio` commit `6124e45037950f4424eef5ce4f8a1f5cbd7f0e0f`.
-- Legacy NOTORIA V1 source: `ASPAR-SOLUTIONS/aspar-group` commit `8486a7d577631fca6434fcac33217c870d629c9d`.
+- Legacy NOTORIA V1 source: `AsparGroup/aspar-group` commit `8486a7d577631fca6434fcac33217c870d629c9d`.
