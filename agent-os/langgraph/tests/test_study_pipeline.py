@@ -56,24 +56,49 @@ def test_passes_phase_1_and_2_but_blocks_at_capex_like_cafe_ia_today():
     )
     assert result["blocked_at_phase"] == "3_capex_postes"
     assert "CAPEX" in result["blocked_reason"]
-    # The 3D preview still runs (Phase 2 passed) even though Phase 3 blocks after it.
-    assert result["render_status"] == "PASS"
-    assert result["render_path"] == "/tmp/Café IA_preview.png"
+    # Café IA has no Zonage and no reference files (Notion, real state as of
+    # 2026-09-13: still "Scoring en cours") — the governance gate from the
+    # Travaux->Blender audit (2026-08-15) must refuse the render rather than
+    # invent a volume from surface_m2 alone.
+    assert result["render_status"] == "STOP"
+    assert "gouvernance Travaux->Blender" in result["render_reason"]
 
 
-def test_visualization_runs_after_phase_2_and_never_blocks_the_study():
+def test_visualization_refuses_to_render_without_validated_zonage_and_files():
+    """Direct regression on the governance rule itself, independent of Café IA:
+    no Zonage 'Validé' status and no fichiers_reference => refusal, always —
+    a bare surface_m2 is never sufficient (see Audit câblage relationnel,
+    Notion, 2026-08-15: "Créer un rendu Blender dans ces conditions équivaut
+    à une invention non tracée").
+    """
     result = invoke(
         {
-            "concept_name": "Concept avec surface",
+            "concept_name": "Concept avec surface mais sans preuve",
             "sourcing_offers_count": 5,
             "dimensionnement_params": {"surface_m2": 45, "zone": "banlieue"},
         },
-        "visualization-runs",
+        "visualization-refused-no-proof",
+    )
+    assert result["render_status"] == "STOP"
+    assert "statut zonage='absent'" in result["render_reason"]
+    # No CAPEX given -> still blocks at Phase 3, proving the render gate and
+    # the study gate are fully independent of each other.
+    assert result["blocked_at_phase"] == "3_capex_postes"
+
+
+def test_visualization_runs_once_zonage_validated_and_reference_files_attached():
+    result = invoke(
+        {
+            "concept_name": "Concept avec plan réel",
+            "sourcing_offers_count": 5,
+            "dimensionnement_params": {"surface_m2": 45, "zone": "banlieue"},
+            "zonage_statut": "Validé",
+            "fichiers_reference": ["plan_rdc.pdf"],
+        },
+        "visualization-runs-with-proof",
     )
     assert result["render_status"] == "PASS"
-    # No CAPEX given -> still blocks at Phase 3, proving the render is a
-    # side-deliverable and never substitutes for the real gate.
-    assert result["blocked_at_phase"] == "3_capex_postes"
+    assert result["render_path"] == "/tmp/Concept avec plan réel_preview.png"
 
 
 def test_visualization_stops_gracefully_without_surface_but_study_continues():
@@ -83,6 +108,8 @@ def test_visualization_stops_gracefully_without_surface_but_study_continues():
             "sourcing_offers_count": 5,
             "dimensionnement_params": {"zone": "centre", "autre_param": "x"},
             "capex_total": 10000,
+            "zonage_statut": "Validé",
+            "fichiers_reference": ["plan_rdc.pdf"],
         },
         "visualization-no-surface",
     )
