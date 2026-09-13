@@ -12,6 +12,7 @@ from typing import Any
 
 from .study_state import PhaseResult, StudyState
 from .study_tools import phase_gate_tool
+from .blender_tools import blender_render_tool
 
 
 def _trace(state: StudyState, name: str) -> list[str]:
@@ -58,6 +59,41 @@ class StudyNodeFactory:
             "phase_results": _record(state.get("phase_results", []), gate),
             "trace": _trace(state, "phase_dimensionnement"),
         }
+
+    def generate_3d_visualization(self, state: StudyState) -> dict[str, Any]:
+        """Building->Blender node: produces an early volume preview from the
+        Phase 2 surface once dimensioning has passed. This is a deliverable,
+        not a gate — a render failure (missing Blender, no surface, etc.) is
+        recorded but never blocks the study from proceeding to Phase 3.
+        """
+        params = state.get("dimensionnement_params", {})
+        surface_m2 = params.get("surface_m2")
+        work_dir = state.get("blender_work_dir", "/tmp/aspar_studies")
+
+        if not surface_m2:
+            return {
+                "render_status": "STOP",
+                "render_reason": "Pas de surface_m2 dans dimensionnement_params",
+                "trace": _trace(state, "generate_3d_visualization"),
+            }
+
+        result = blender_render_tool.invoke(
+            {
+                "concept_name": state.get("concept_name", "concept"),
+                "surface_m2": surface_m2,
+                "work_dir": work_dir,
+            }
+        )
+
+        update: dict[str, Any] = {
+            "render_status": result.get("status", "STOP"),
+            "trace": _trace(state, "generate_3d_visualization"),
+        }
+        if result.get("status") == "PASS":
+            update["render_path"] = result.get("render_path", "")
+        else:
+            update["render_reason"] = result.get("reason", "")
+        return update
 
     def phase_capex(self, state: StudyState) -> dict[str, Any]:
         capex_total = state.get("capex_total", 0.0)
