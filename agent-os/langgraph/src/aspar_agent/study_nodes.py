@@ -61,11 +61,33 @@ class StudyNodeFactory:
         }
 
     def generate_3d_visualization(self, state: StudyState) -> dict[str, Any]:
-        """Building->Blender node: produces an early volume preview from the
-        Phase 2 surface once dimensioning has passed. This is a deliverable,
-        not a gate — a render failure (missing Blender, no surface, etc.) is
+        """Building->Blender node: produces an early volume preview once the
+        Notion governance gate is satisfied (Audit câblage relationnel —
+        Travaux -> Blender, 2026-08-15): "aucun promptage Blender ne doit être
+        exécuté sur une zone dont le statut n'est pas Validé et dont aucun
+        fichier de référence n'est attaché... Créer un rendu Blender dans ces
+        conditions équivaut à une invention non tracée." A bare surface_m2 is
+        not enough — without a real plan/élévation/coupe and a Validé zoning
+        status, this node must refuse rather than invent a volume. It is a
+        deliverable, not a study gate: a refusal or a render failure is
         recorded but never blocks the study from proceeding to Phase 3.
         """
+        zonage_statut = state.get("zonage_statut", "")
+        fichiers_reference = state.get("fichiers_reference", [])
+
+        if zonage_statut != "Validé" or not fichiers_reference:
+            return {
+                "render_status": "STOP",
+                "render_reason": (
+                    "Bloqué par la gouvernance Travaux->Blender (audit 2026-08-15) : "
+                    f"statut zonage='{zonage_statut or 'absent'}' "
+                    f"(requis: Validé), fichiers_reference={len(fichiers_reference)} "
+                    "(requis: >= 1 plan/élévation/coupe/photo). "
+                    "Aucun rendu Blender sans ces preuves — sinon invention non tracée."
+                ),
+                "trace": _trace(state, "generate_3d_visualization"),
+            }
+
         params = state.get("dimensionnement_params", {})
         surface_m2 = params.get("surface_m2")
         work_dir = state.get("blender_work_dir", "/tmp/aspar_studies")
