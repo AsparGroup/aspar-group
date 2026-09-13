@@ -88,13 +88,14 @@ def blender_render_tool(
         [
             "cli-anything-blender", "--project", str(project_path),
             "light", "add", "sun", "--name", "sun1",
+            "-r", "45,0,45", "-w", "5.0",
         ],
         cwd=project_dir,
     )
     _run(
         [
             "cli-anything-blender", "--project", str(project_path),
-            "render", "execute", str(render_path),
+            "render", "execute", str(render_path), "--overwrite",
         ],
         cwd=project_dir,
     )
