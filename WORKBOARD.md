@@ -25,7 +25,7 @@ Rule: maximum **3 items in NOW**. Everything else stays in NEXT, LATER or BLOCKE
 - Any promise of fully autonomous client operations: blocked until capability, permissions and reliability are demonstrated.
 
 ## Completed infrastructure
-- Canonical shared repository established at `ASPAR-SOLUTIONS/aspar-group`.
+- Canonical shared repository established at `AsparGroup/aspar-group`.
 - Shared active execution area established at `agent-os/`.
 - Executable LangGraph + LangChain pre-execution gate migrated to `agent-os/langgraph/`.
 - Existing Claude agents preserved in `.claude/agents/` in the same repository.
