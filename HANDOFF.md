@@ -9,7 +9,7 @@ Use this file only for concise continuation context between substantial sessions
 **To:** Claude Code / next ASPAR agent
 
 ### Objective
-Use `ASPAR-SOLUTIONS/aspar-group` as the canonical shared repository. The active pre-execution runtime is `agent-os/langgraph/`; all local Claude Code/MCP and downstream Canva/image/social execution must pass through it before side effects.
+Use `AsparGroup/aspar-group` as the canonical shared repository. The active pre-execution runtime is `agent-os/langgraph/`; all local Claude Code/MCP and downstream Canva/image/social execution must pass through it before side effects.
 
 ### Read first
 1. `ASPAR_CONTEXT.md`
@@ -34,7 +34,7 @@ GitHub Actions run `34694733008`, job `103556151210`, succeeded on Python 3.12:
 A prior RED run failed specifically because the canonical root Majdi SOURCE LOCK was absent; migration of that source made the tests pass without relaxing validation.
 
 ### Decisions made
-- Canonical repository: `ASPAR-SOLUTIONS/aspar-group`.
+- Canonical repository: `AsparGroup/aspar-group`.
 - Shared active runtime location: `agent-os/`.
 - Active gate: `agent-os/langgraph/`.
 - Claude agents: `.claude/agents/`, using the same root context/runtime.
@@ -46,7 +46,7 @@ A prior RED run failed specifically because the canonical root Majdi SOURCE LOCK
 Local Mac/Claude Code/MCP caller wiring still requires local verification. The repository migration itself is CI-verified.
 
 ### Next exact action
-1. Sync `ASPAR-SOLUTIONS/aspar-group` locally after PR #4 is merged.
+1. Sync `AsparGroup/aspar-group` locally after PR #4 is merged.
 2. From `agent-os/langgraph/`, install `.[dev,postgres]`, run pytest and smoke, then start `langgraph dev --no-browser`.
 3. Point Claude Code/MCP and downstream executors at this gate.
 4. Do not bypass SOURCE LOCK for visual or factual-claim tasks.
