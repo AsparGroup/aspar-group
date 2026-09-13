@@ -33,7 +33,12 @@ class StudyState(TypedDict, total=False):
     dimensionnement_params: dict[str, Any]
 
     # Visualisation 3D (Building->Blender) — livrable déclenché après la Phase 2,
-    # jamais bloquant pour la suite de l'étude (voir StudyNodeFactory.generate_3d_visualization)
+    # jamais bloquant pour la suite de l'étude (voir StudyNodeFactory.generate_3d_visualization).
+    # Gate de gouvernance (Audit câblage relationnel — Travaux->Blender, 2026-08-15) :
+    # aucun rendu sans statut zonage "Validé" ET au moins un fichier de référence réel
+    # (plan/élévation/coupe/photo) — sinon "invention non tracée", explicitement interdite.
+    zonage_statut: str
+    fichiers_reference: list[str]
     blender_work_dir: str
     render_status: str  # "PASS" | "STOP" | "" (pas encore tenté)
     render_path: str
