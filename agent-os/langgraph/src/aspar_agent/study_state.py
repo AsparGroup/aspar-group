@@ -32,6 +32,13 @@ class StudyState(TypedDict, total=False):
     # Phase 2 — Dimensionnement surface (seuil: 2 paramètres saisis)
     dimensionnement_params: dict[str, Any]
 
+    # Visualisation 3D (Building->Blender) — livrable déclenché après la Phase 2,
+    # jamais bloquant pour la suite de l'étude (voir StudyNodeFactory.generate_3d_visualization)
+    blender_work_dir: str
+    render_status: str  # "PASS" | "STOP" | "" (pas encore tenté)
+    render_path: str
+    render_reason: str
+
     # Phase 3 — CAPEX postes (seuil: CAPEX total > 0 TND)
     capex_postes: dict[str, float]
     capex_total: float
