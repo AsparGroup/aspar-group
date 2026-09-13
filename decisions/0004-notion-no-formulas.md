@@ -1,6 +1,6 @@
-# ADR 0004 — Notion holds raw data only; no formulas or rollups compute decisions
+# ADR 0004 — Computation only where its result is verified readable; Notion's formula engine is banned, not formulas in general
 
-**Status:** ACTIVE
+**Status:** ACTIVE (revised 2026-09-13, same day as first version — see Context)
 **Date:** 2026-09-13
 
 ## Context
@@ -15,42 +15,74 @@ any agent or automation uses — these resolve to opaque references
 trapped inside Notion's formula engine: unreadable by any external tool, and in practice
 never producing a usable verdict for CEO decision-making.
 
-This is a general failure mode of the "relations + rollups as decision engine" pattern,
-not specific to Elionor — the same pattern was about to be reused for Café IA's study
-before this was caught.
+The first version of this ADR (same day) generalized this into "no formulas or rollups
+compute decisions, anywhere" and required all computation to move into an external code
+pipeline (`agent-os/langgraph`). The CEO correctly pushed back the same day: a real ERP's
+auditability model is exactly the opposite of that — source data is editable only at its
+origin, and everything derived is generated automatically by rollup/formula, never typed
+by hand or maintained by a separate process a human must remember to re-run. That is a
+sound, standard ERP principle, and an external pipeline that only updates when manually
+invoked reintroduces its own reliability problem (a value goes stale the moment the source
+data changes and nobody re-runs the pipeline).
+
+The actual defect is narrower than "formulas are unsafe": Notion's formula/rollup engine
+specifically returns an opaque, unresolvable reference through every access path available
+to an agent or external tool. Odoo's computed fields and Studio formulas, by contrast,
+generally resolve to a plain value through its own API/ORM. The failure is a property of
+the tool, not of the "compute automatically, derived from source data" pattern itself.
 
 ## Decision
-Notion properties must be plain data (text, number, select, status, date, file, person,
-url) that a human or an agent enters directly. Notion formula and rollup property types
-must not be used to compute scores, verdicts, sums, or any value a GO/NO-GO decision
-depends on.
+A rollup or formula may compute a value that feeds a decision (score, verdict, GO/NO-GO,
+CAPEX total, etc.) **only where its result has been verified, concretely, to resolve to a
+plain readable value** through the access path that will actually be used to read it (its
+API, its ORM, its MCP connector) — not assumed safe because the tool is not Notion.
 
-All such computation — sourcing counts, CAPEX totals, market/proof scores, GO/NO-GO
-gates — is done in code (`agent-os/langgraph`, see `study_state.py` / `study_nodes.py` /
-`study_graph.py`), which reads Notion's raw fields as plain inputs. The computed result
-(score, verdict, GO/NO-GO) is never written back into Notion, not even as a read-only
-display field — doing so would create a second copy of the same fact and violate SSOT
-exactly as [ADR 0001](./0001-notion-out-of-core.md) already forbids for decisions and
-runtime business records. The computed result lives in exactly one place: the pipeline's
-own state/persistence (eventually the simple Odoo model already planned for this
-pipeline). Anyone who needs to see the verdict reads it from there, not from Notion.
+- **Notion**: formula and rollup property types remain banned from computing anything a
+  decision depends on. Confirmed opaque (`formulaResult://...`, `rollupResult://...`)
+  through its MCP connector, the only access path available to Claude Code or any agent.
+  Notion properties stay plain data (text, number, select, status, date, file, person,
+  url) entered directly by a human or agent.
+- **Odoo** (or any other tool): a computed/formula field is allowed to compute a
+  decision-relevant value once it has been checked, concretely, to return a plain value
+  via the connector in actual use — not merely because Odoo's fields are documented to
+  behave that way in general. Check each field the first time it is relied on; a chain of
+  several dependent formulas (e.g. a composite score built from five sub-scores) must be
+  checked at each link, since a chain that resolves at the leaves can still fail at an
+  intermediate aggregation step — exactly the pattern that broke Elionor's scoring despite
+  a well-normalized relational model.
+- Data that is genuinely a source fact (a sourced price, a measured surface, a CEO
+  decision) stays a plain, directly-editable field everywhere, regardless of tool — it is
+  never itself the output of a formula.
+- Where no tool's formula engine has yet been verified to produce a readable result for a
+  given computation (this is Café IA's and Elionor's actual state today for market/proof
+  scoring), the computation lives in code (`agent-os/langgraph`) as an interim, tested,
+  auditable stand-in — not because code is preferred over a native ERP formula in
+  principle, but because an unverified formula is not yet trustworthy enough to depend on.
 
 ## Consequences
+- The target architecture is a real ERP inside Odoo (modules and sub-modules, mirroring
+  ASPAR Business's structure: Opportunités, Étude, Investissement, Cabinet, Gouvernance):
+  source data editable only at origin, every derived value generated by a verified-readable
+  Odoo rollup/formula — this is the goal, not an external pipeline as a permanent design.
+- The coded pipeline (`study_state.py` / `study_nodes.py` / `study_graph.py`) is the
+  correct home for a computation only until the equivalent Odoo formula has been built and
+  verified readable. As Odoo formulas are verified for a given score/threshold, that
+  computation migrates from the pipeline into a native Odoo rollup/formula, not the reverse.
 - Existing Notion formula/rollup fields used for scoring (Elionor's Évaluations base,
-  P&L mensuel, etc.) are legacy — not deleted, but no longer trusted as the source of a
-  verdict, and never repurposed to hold a copy of the code-computed result either. They
-  should be phased out over time, not replaced field-for-field.
-- Every new study/scoring workflow (Café IA and beyond) uses the coded 7-phase gate
-  pipeline from day one instead of a new Notion relational scoring setup.
-- Notion keeps its value as the human-facing data entry and browsing surface — this ADR
-  does not remove Notion from the stack, it removes computation from Notion.
-- Extends [ADR 0001](./0001-notion-out-of-core.md) (Notion out of core infrastructure):
-  0001 keeps operational/decision records out of Notion; this ADR specifically forbids
-  Notion's formula/rollup engine from being the place computation happens, even for data
-  that does stay in Notion.
+  P&L mensuel, etc.) remain untrusted as-is — Notion's engine itself is the confirmed
+  failure, independent of this broader nuance, so nothing there gets a pass.
+- A GO/NO-GO or score value must not exist as an unverified duplicate in two places at
+  once (Notion display + Odoo formula + pipeline output) — whichever one is the verified,
+  current source for a given number is the only one anyone reads; the others either don't
+  hold that value or are clearly marked legacy/superseded.
+- Extends [ADR 0001](./0001-notion-out-of-core.md): 0001 keeps operational/decision
+  records out of Notion; this ADR governs where and under what condition automatic
+  computation may run, across every tool, not just Notion.
 
 ## Supersedes
-Any implicit assumption that a sufficiently well-normalized Notion relational database
-(even one following the "un propriétaire par relation" doctrine) is adequate as a scoring
-or decision engine. Normalization solves data integrity; it does not solve computability
-by tools outside Notion's own UI.
+The same-day first version of this ADR, which banned formula/rollup-based computation
+categorically rather than conditioning it on verified readability. Also supersedes any
+assumption that a well-normalized relational model (even one following the "un
+propriétaire par relation" doctrine) is automatically adequate as a scoring/decision
+engine — normalization solves data integrity, not computability by the tools that need to
+read the result.
