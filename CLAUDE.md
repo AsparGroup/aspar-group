@@ -4,7 +4,7 @@ This is the canonical repository shared by Claude Code, ChatGPT and future ASPAR
 
 ## Mandatory reading order
 Before substantial work:
-0. Read `STATE_ROUTER.md`, then the real master file it points to (`ETAT_LIVE_ASPAR.md` on Drive) — it holds the real operational facts (brand colors, prices, contacts, legal structure) that nothing in this repo duplicates. Never treat this repo alone as sufficient for those facts.
+0. Read `STATE_ROUTER.md`, then the real master file it points to (`ETAT_LIVE_ASPAR.md` on Drive). Never treat this repo alone as sufficient for live state.
 1. Read `ASPAR_CONTEXT.md`.
 2. Read `CURRENT_STATE.md`.
 3. Read `WORKBOARD.md`.
@@ -25,6 +25,11 @@ Required pre-execution flow:
 `intake -> classify -> resolve_role -> resolve_brand -> source_router -> retrieve_context -> validate -> SOURCE_LOCK PASS/STOP -> plan -> execute(preflight) -> QA -> writeback`
 
 No downstream Canva/image/social/Odoo side effect may bypass the SOURCE LOCK gate.
+
+## Shared live-state concurrency rule
+`ETAT_LIVE_ASPAR.md` is the single live operational state file. Claude Code, Codex, ChatGPT and workers may read it concurrently, but only one writer may modify it at a time.
+
+Every writer MUST follow the protocol in `STATE_ROUTER.md`: reread latest state, acquire the shared lock, reread to confirm lock ownership, make only the minimal update, increment `REVISION`, verify after write, then release the lock. Never overwrite another writer's active lock, never write from stale content, and never create a parallel state file.
 
 ## Mandatory stack-first preflight
 Before recommending, installing, or adding any new tool, SaaS, connector, database, automation platform, publishing platform, analytics product, or agent framework:
