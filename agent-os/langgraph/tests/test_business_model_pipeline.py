@@ -5,7 +5,7 @@ never fabricates a number when data is missing.
 """
 
 from aspar_agent.business_model_graph import build_business_model_graph
-from aspar_agent.business_model_tools import devis_chantier
+from aspar_agent.business_model_tools import devis_chantier, estimation_amenagement_m2
 
 
 def invoke(payload: dict, thread_id: str):
@@ -88,3 +88,24 @@ def test_devis_chantier_missing_debourse_sec_never_guesses():
     )
     assert prix is None
     assert "debourse_sec_tnd" in manquants
+
+
+def test_estimation_amenagement_m2_never_claims_tunisian_data():
+    """Aucune donnée tunisienne détaillée n'est publiée publiquement (recherche
+    du 2026-09-14) — l'estimation doit toujours dire explicitement qu'elle
+    utilise un repère français, jamais laisser croire à un prix tunisien vérifié.
+    """
+    result = estimation_amenagement_m2(surface_m2=80, type_activite="restaurant_cafe", taux_change_eur_tnd=3.4)
+    assert "PAS une donnée tunisienne vérifiée" in result["source"]
+    assert result["fourchette_tnd"] == (204000.0, 612000.0)
+
+
+def test_estimation_amenagement_m2_missing_surface():
+    result = estimation_amenagement_m2(surface_m2=None, type_activite="restaurant_cafe", taux_change_eur_tnd=3.4)
+    assert result["estimation"] is None
+    assert "erreur" in result
+
+
+def test_estimation_amenagement_m2_unknown_activity():
+    result = estimation_amenagement_m2(surface_m2=50, type_activite="usine_chimique", taux_change_eur_tnd=3.4)
+    assert "erreur" in result
