@@ -1,7 +1,8 @@
 """Failover wrapper around `executor.run_executor`: if the primary LLM call
 fails for ANY reason (missing key, quota, rate limit, network error — not
-just a missing-key ExecutorError), DeepSeek (via `deepseek_worker.py`,
-NVIDIA Build's free tier) takes over the same task automatically.
+just a missing-key ExecutorError), the second-agent worker (via
+`second_agent_worker.py`, Gemini's free tier) takes over the same task
+automatically.
 
 This is a pipeline-level continuity mechanism, not a way to resume THIS
 Claude Code session — it cannot take over this conversation, push commits
@@ -20,8 +21,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from aspar_agent.deepseek_worker import run_deepseek_worker
 from aspar_agent.executor import ExecutorError, _build_user_prompt, run_executor
+from aspar_agent.second_agent_worker import run_second_agent_worker
 
 
 def run_executor_resilient(
@@ -30,15 +31,15 @@ def run_executor_resilient(
     model: str = "gpt-4.1",
     max_tokens: int = 2048,
     client: Any | None = None,
-    deepseek_client: Any | None = None,
+    fallback_client: Any | None = None,
 ) -> dict[str, Any]:
     """Try the primary executor first; on ANY failure, fall back to the
-    DeepSeek worker with the same task/context. Raises ExecutorError only
-    if BOTH providers fail — the caller then knows execution genuinely
-    could not happen, not just that one provider had a bad day.
+    second-agent worker with the same task/context. Raises ExecutorError
+    only if BOTH providers fail — the caller then knows execution
+    genuinely could not happen, not just that one provider had a bad day.
 
     A gate result that did not PASS is never a provider failure — it is a
-    deliberate governance stop, and DeepSeek must never fall back around
+    deliberate governance stop, and the fallback must never run around
     it. That case is left to `run_executor`'s own check, untouched.
     """
     if gate_result.get("writeback", {}).get("status") != "PASS":
@@ -48,21 +49,21 @@ def run_executor_resilient(
         return run_executor(gate_result, model=model, max_tokens=max_tokens, client=client)
     except Exception as primary_error:  # noqa: BLE001 - deliberately broad: any provider failure triggers failover
         try:
-            fallback = run_deepseek_worker(
+            fallback = run_second_agent_worker(
                 task=gate_result.get("task", gate_result.get("request", "")),
                 context=_build_user_prompt(gate_result),
-                client=deepseek_client,
+                client=fallback_client,
             )
         except Exception as fallback_error:  # noqa: BLE001 - mirror the broad primary catch: any fallback failure means genuine outage
             raise ExecutorError(
-                f"Primary executor failed ({primary_error!s}) and the DeepSeek "
-                f"fallback also failed ({fallback_error!s}) — no provider could "
+                f"Primary executor failed ({primary_error!s}) and the fallback "
+                f"worker also failed ({fallback_error!s}) — no provider could "
                 "run this task."
             ) from fallback_error
 
         return {
             "status": "EXECUTED_VIA_FALLBACK",
-            "provider": "deepseek_fallback",
+            "provider": fallback["provider"],
             "primary_provider_error": str(primary_error),
             "model": fallback["model"],
             "output": fallback["output"],
