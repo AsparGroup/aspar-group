@@ -236,6 +236,127 @@ def paliers_solutions(
     }
 
 
+def paliers_building(
+    surface_m2: float | None,
+    type_activite: str,
+    taux_change_eur_tnd: float,
+) -> dict[str, Any]:
+    """Construit 3 "paliers" GÉNÉRIQUES et RÉUTILISABLES pour ASPAR Building —
+    un outil de calcul pour n'importe quel projet d'aménagement/construction,
+    PAS un pack figé lié à un client ou une marque précise.
+
+    Combine estimation_amenagement_m2() (design/mobilier/finition, fourchette
+    EUR/m² -> TND) avec devis_chantier() (partie gros-œuvre/exécution) — mais
+    SANS jamais inventer de déboursé sec : devis_chantier() est toujours
+    appelé ici avec debourse_sec_tnd=None, donc il retourne systématiquement
+    None + une entrée dans donnee_manquante. C'est le comportement voulu, pas
+    un bug : tant qu'un vrai devis chantier n'existe pas pour un projet
+    précis, cette fonction ne doit jamais produire un prix chantier "réel".
+
+    STATUT DES DONNÉES SOP UTILISÉES PAR devis_chantier() (DUREE_STANDARD_JOURS
+    = 45/60/75 jours, logique "déboursé sec + marge 10%") : ces valeurs sont
+    présentées ailleurs dans ce module comme portées du SOP "MG Contracting".
+    Un audit (2026-09-14) a confirmé qu'aucune trace écrite vérifiable de ce
+    SOP n'existe dans aspar-group, aspar-agent-os, ni ailleurs. Ces valeurs
+    proviennent UNIQUEMENT d'une conversation orale avec le CEO (Majdi
+    Garbouj). Elles doivent être traitées comme "donnée orale du CEO, non
+    recoupée par écrit" — jamais comme un SOP validé et sourcé — jusqu'à ce
+    qu'un document écrit (contrat, devis réel, process documenté) les
+    confirme. Cette fonction hérite de ce statut via l'appel à devis_chantier()
+    ; elle n'ajoute aucune donnée tunisienne inventée de son côté.
+
+    Retourne un dict avec `statut` explicite :
+    - "PROPOSITION_NON_VALIDEE" quand les 3 niveaux ont pu être calculés à
+      partir d'une fourchette valide (surface + type d'activité connus) ;
+    - "ERREUR_DONNEES_INSUFFISANTES" quand surface_m2 ou type_activite ne
+      permettent aucun calcul — aucun niveau n'est alors renvoyé, et aucun
+      chiffre n'est fabriqué pour compenser.
+
+    Les noms de niveaux ("Essentiel"/"Confort"/"Premium") sont des
+    PROPOSITIONS de l'outil, pas une décision actée par le CEO — à valider
+    avant tout usage commercial ou client.
+    """
+    estimation = estimation_amenagement_m2(surface_m2, type_activite, taux_change_eur_tnd)
+
+    if "erreur" in estimation:
+        return {
+            "statut": "ERREUR_DONNEES_INSUFFISANTES",
+            "erreur": estimation["erreur"],
+            "type_activite": type_activite,
+            "surface_m2": surface_m2,
+            "amenagement_design_mobilier": None,
+            "gros_oeuvre_execution_chantier": None,
+        }
+
+    bas_eur_m2, haut_eur_m2 = estimation["fourchette_eur_m2"]
+    etendue_eur_m2 = haut_eur_m2 - bas_eur_m2
+
+    # fraction de la fourchette EUR/m² utilisée par chaque niveau proposé —
+    # 0.0 = bas de fourchette, 1.0 = haut de fourchette.
+    niveaux_proposes = (
+        ("Essentiel", 0.0),
+        ("Confort", 0.5),
+        ("Premium", 1.0),
+    )
+
+    niveaux: dict[str, Any] = {}
+    for nom, fraction in niveaux_proposes:
+        eur_m2 = bas_eur_m2 + fraction * etendue_eur_m2
+        multiplicateur_vs_bas = round(eur_m2 / bas_eur_m2, 3) if bas_eur_m2 else None
+        prix_estime_tnd = round(eur_m2 * surface_m2 * taux_change_eur_tnd, 0)
+        niveaux[nom] = {
+            "nom_propose": nom,
+            "statut_nom": "PROPOSITION_NON_VALIDEE — nom indicatif choisi par l'outil, pas validé par le CEO",
+            "multiplicateur_vs_bas_fourchette": multiplicateur_vs_bas,
+            "eur_m2_utilise": round(eur_m2, 2),
+            "calcul": (
+                f"{round(eur_m2, 2)} EUR/m2 x {surface_m2} m2 x {taux_change_eur_tnd} (taux EUR->TND) "
+                f"= {prix_estime_tnd} TND"
+            ),
+            "prix_estime_tnd": prix_estime_tnd,
+        }
+
+    # Partie gros-œuvre/exécution : jamais de déboursé sec inventé ici.
+    prix_vente_ht_tnd, duree_estimee_jours, montant_par_lot_tnd, donnee_manquante_devis = devis_chantier(
+        debourse_sec_tnd=None,
+        marge_pct=DEFAULT_MARGE_PCT,
+        taille_chantier="Moyen",
+        repartition_lots_pct={},
+    )
+
+    return {
+        "statut": "PROPOSITION_NON_VALIDEE",
+        "avertissement": (
+            "Les 3 paliers ci-dessous ('Essentiel'/'Confort'/'Premium') sont des noms PROPOSÉS par l'outil "
+            "de calcul, PAS une décision actée par le CEO (Majdi Garbouj) — à valider avant tout usage "
+            "commercial ou client. Les montants restent une fourchette internationale (marché français, "
+            "voir estimation_amenagement_m2) et NE SONT PAS des prix tunisiens vérifiés tant qu'un devis "
+            "chantier réel (déboursé sec saisi via devis_chantier) n'a pas été établi pour ce projet précis."
+        ),
+        "type_activite": type_activite,
+        "surface_m2": surface_m2,
+        "taux_change_eur_tnd": taux_change_eur_tnd,
+        "amenagement_design_mobilier": {
+            "source": estimation["source"],
+            "fourchette_eur_m2": estimation["fourchette_eur_m2"],
+            "niveaux": niveaux,
+        },
+        "gros_oeuvre_execution_chantier": {
+            "prix_vente_ht_tnd": prix_vente_ht_tnd,
+            "duree_estimee_jours": duree_estimee_jours,
+            "montant_par_lot_tnd": montant_par_lot_tnd,
+            "donnee_manquante": donnee_manquante_devis,
+            "note": (
+                "Aucun déboursé sec saisi pour ce projet : devis_chantier() retourne None par conception, "
+                "jamais une estimation inventée à sa place. Rappel : les durées standard (45/60/75 jours) "
+                "et la logique 'déboursé sec + marge 10%' de devis_chantier() sont une donnée ORALE du CEO "
+                "(Majdi Garbouj), non recoupée par un document écrit vérifiable — pas un SOP validé et "
+                "sourcé — jusqu'à preuve écrite du contraire."
+            ),
+        },
+    }
+
+
 def devis_chantier(
     debourse_sec_tnd: float | None,
     marge_pct: float,

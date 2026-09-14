@@ -9,6 +9,7 @@ from aspar_agent.business_model_tools import (
     devis_chantier,
     estimation_amenagement_m2,
     pack_franchise_generique,
+    paliers_building,
     paliers_solutions,
 )
 
@@ -174,3 +175,63 @@ def test_paliers_solutions_invalid_cost_never_produces_tiers():
     )
     assert result["paliers"] is None
     assert "erreur" in result
+
+
+def test_paliers_building_nominal_case_produces_increasing_unvalidated_tiers():
+    """Cas nominal : surface + type d'activité valides -> 3 niveaux calculés,
+    strictement croissants (Essentiel < Confort < Premium), et le statut doit
+    dire sans ambiguïté que ce sont des propositions, pas une décision actée."""
+    result = paliers_building(surface_m2=100, type_activite="bureau_standard", taux_change_eur_tnd=3.4)
+
+    assert result["statut"] == "PROPOSITION_NON_VALIDEE"
+    niveaux = result["amenagement_design_mobilier"]["niveaux"]
+    assert set(niveaux) == {"Essentiel", "Confort", "Premium"}
+
+    prix = [niveaux["Essentiel"]["prix_estime_tnd"], niveaux["Confort"]["prix_estime_tnd"], niveaux["Premium"]["prix_estime_tnd"]]
+    assert prix == sorted(prix)
+    assert prix[0] < prix[1] < prix[2]  # strictement croissant, pas seulement non-décroissant
+
+    # multiplicateurs explicites et croissants eux aussi
+    mults = [niveaux[n]["multiplicateur_vs_bas_fourchette"] for n in ("Essentiel", "Confort", "Premium")]
+    assert mults == sorted(mults)
+    assert niveaux["Essentiel"]["multiplicateur_vs_bas_fourchette"] == 1.0
+
+    # chaque niveau porte explicitement la mention "non validé"
+    for n in niveaux.values():
+        assert "PROPOSITION_NON_VALIDEE" in n["statut_nom"]
+
+
+def test_paliers_building_missing_surface_raises_clean_error_no_fabricated_number():
+    result = paliers_building(surface_m2=None, type_activite="bureau_standard", taux_change_eur_tnd=3.4)
+
+    assert result["statut"] == "ERREUR_DONNEES_INSUFFISANTES"
+    assert "erreur" in result
+    assert result["amenagement_design_mobilier"] is None
+    assert result["gros_oeuvre_execution_chantier"] is None
+
+
+def test_paliers_building_unknown_type_activite_raises_clean_error():
+    result = paliers_building(surface_m2=80, type_activite="usine_chimique", taux_change_eur_tnd=3.4)
+
+    assert result["statut"] == "ERREUR_DONNEES_INSUFFISANTES"
+    assert "erreur" in result
+    assert result["amenagement_design_mobilier"] is None
+
+
+def test_paliers_building_never_mixes_real_devis_chantier_without_debourse_sec():
+    """Preuve que l'estimation indicative (design/mobilier) n'est jamais
+    mélangée à un vrai devis chantier tant que debourse_sec_tnd n'est pas
+    fourni : la partie gros-œuvre doit rester None + donnee_manquante, et
+    aucun niveau proposé ne doit porter un champ de prix chantier réel."""
+    result = paliers_building(surface_m2=100, type_activite="restaurant_cafe", taux_change_eur_tnd=3.4)
+
+    gros_oeuvre = result["gros_oeuvre_execution_chantier"]
+    assert gros_oeuvre["prix_vente_ht_tnd"] is None
+    assert gros_oeuvre["duree_estimee_jours"] is None
+    assert gros_oeuvre["montant_par_lot_tnd"] == {}
+    assert "debourse_sec_tnd" in gros_oeuvre["donnee_manquante"]
+
+    # aucun niveau d'aménagement ne doit contenir un champ de devis chantier réel
+    for niveau in result["amenagement_design_mobilier"]["niveaux"].values():
+        assert "prix_vente_ht_tnd" not in niveau
+        assert "debourse_sec_tnd" not in niveau
