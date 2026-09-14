@@ -59,7 +59,7 @@ def test_primary_quota_failure_falls_back_to_second_agent():
     result = run_executor_resilient(_pass_gate_result(), client=primary, fallback_client=fallback)
 
     assert result["status"] == "EXECUTED_VIA_FALLBACK"
-    assert result["provider"] == "google_ai_studio"
+    assert result["provider"] == "deepseek_official"
     assert result["output"] == "Brouillon de secours."
     assert result["verification_required"] is True
     assert "rate limit exceeded" in result["primary_provider_error"]
