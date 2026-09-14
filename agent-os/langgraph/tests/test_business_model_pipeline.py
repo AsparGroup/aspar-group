@@ -5,7 +5,12 @@ never fabricates a number when data is missing.
 """
 
 from aspar_agent.business_model_graph import build_business_model_graph
-from aspar_agent.business_model_tools import devis_chantier, estimation_amenagement_m2
+from aspar_agent.business_model_tools import (
+    devis_chantier,
+    estimation_amenagement_m2,
+    pack_franchise_generique,
+    paliers_solutions,
+)
 
 
 def invoke(payload: dict, thread_id: str):
@@ -108,4 +113,64 @@ def test_estimation_amenagement_m2_missing_surface():
 
 def test_estimation_amenagement_m2_unknown_activity():
     result = estimation_amenagement_m2(surface_m2=50, type_activite="usine_chimique", taux_change_eur_tnd=3.4)
+    assert "erreur" in result
+
+
+def test_pack_franchise_generique_reproduces_cafe_ia_real_numbers():
+    """Vérifie que la fonction généralisée reproduit exactement le calcul
+    Café IA déjà validé le 2026-09-14 (CAPEX réel 92 599 TND, extension
+    17 000 TND soit ~18.36%, droit d'entrée 15%)."""
+    result = pack_franchise_generique(
+        capex_reel_tnd=92_599,
+        part_extension_pct=17_000 / 92_599 * 100,
+        droit_entree_pct=15.0,
+        nom_marque="Café IA",
+    )
+    assert result["extension_image_tnd"] == 17_000.0
+    assert result["pack_de_base_tnd"] == 75_599.0
+    assert result["droit_entree_tnd"] == round(92_599 * 0.15, 2)
+    assert result["donnee_manquante"] == []
+
+
+def test_pack_franchise_generique_never_reuses_another_brand_split():
+    """Sans CAPEX réel fourni pour la nouvelle marque, la fonction ne doit
+    jamais réutiliser silencieusement les chiffres Café IA — tout doit
+    ressortir en donnee_manquante."""
+    result = pack_franchise_generique(
+        capex_reel_tnd=None,
+        part_extension_pct=None,
+        droit_entree_pct=None,
+        nom_marque="Nouvelle Marque X",
+    )
+    assert result["pack"] is None
+    assert set(result["donnee_manquante"]) == {
+        "capex_reel_tnd",
+        "part_extension_pct",
+        "droit_entree_pct",
+    }
+
+
+def test_paliers_solutions_never_prices_below_real_variable_cost():
+    """Reproduit l'erreur ADR 0005 (30 TND < 65.3 TND coût réel = perte) :
+    un palier dont le prix calculé descendrait sous le coût variable réel
+    ne doit jamais pouvoir être généré silencieusement — la marge cible
+    minimale doit toujours être > 0."""
+    result = paliers_solutions(
+        prix_reference_tnd=90.0,
+        cout_variable_reel_tnd=65.3,
+        marges_cibles_pct={"Essentiel": 30, "Croissance": 60, "Elite": 100},
+    )
+    prix = [p["prix_mensuel_tnd"] for p in result["paliers"].values()]
+    assert all(p > 65.3 for p in prix)
+    assert prix == sorted(prix)  # paliers strictement croissants
+    assert result["paliers"]["Essentiel"]["prix_mensuel_tnd"] == 84.89
+
+
+def test_paliers_solutions_invalid_cost_never_produces_tiers():
+    result = paliers_solutions(
+        prix_reference_tnd=90.0,
+        cout_variable_reel_tnd=0,
+        marges_cibles_pct={"Essentiel": 30},
+    )
+    assert result["paliers"] is None
     assert "erreur" in result

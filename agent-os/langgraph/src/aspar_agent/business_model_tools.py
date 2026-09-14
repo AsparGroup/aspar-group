@@ -137,6 +137,105 @@ def score_modele_economique(state: dict[str, Any]) -> tuple[float, list[str]]:
     return score, manquants
 
 
+def pack_franchise_generique(
+    capex_reel_tnd: float | None,
+    part_extension_pct: float | None,
+    droit_entree_pct: float | None,
+    nom_marque: str,
+) -> dict[str, Any]:
+    """Découpe un CAPEX réel (déjà sourcé pour UNE marque donnée, jamais
+    inventé ici) en pack de base + extension + droit d'entrée. Généralise
+    la méthode validée le 2026-09-14 sur Café IA (CAPEX réel 92 599 TND,
+    92 599 = 75 599 base + 17 000 extension, soit ~18.4% en extension ;
+    droit d'entrée 15% proposé, jamais encore acté en ADR) — réutilisable
+    pour n'importe quelle marque, à condition que le CAPEX de CETTE marque
+    soit un chiffre réel fourni par l'appelant, jamais fabriqué ici.
+
+    `part_extension_pct` et `droit_entree_pct` doivent être fournis
+    explicitement par l'appelant (pas de valeur par défaut fabriquée) —
+    s'ils manquent, la fonction les liste dans `donnee_manquante` plutôt
+    que de réutiliser silencieusement les 18.4%/15% de Café IA, qui ne
+    sont pas nécessairement pertinents pour une autre marque.
+    """
+    manquants: list[str] = []
+    if capex_reel_tnd is None:
+        manquants.append("capex_reel_tnd")
+    if part_extension_pct is None:
+        manquants.append("part_extension_pct")
+    if droit_entree_pct is None:
+        manquants.append("droit_entree_pct")
+    if manquants:
+        return {"pack": None, "donnee_manquante": manquants}
+
+    montant_extension = round(capex_reel_tnd * part_extension_pct / 100, 2)
+    montant_base = round(capex_reel_tnd - montant_extension, 2)
+    droit_entree = round(capex_reel_tnd * droit_entree_pct / 100, 2)
+    total = round(capex_reel_tnd + droit_entree, 2)
+
+    return {
+        "marque": nom_marque,
+        "pack_de_base_tnd": montant_base,
+        "extension_image_tnd": montant_extension,
+        "total_pack_materiel_tnd": capex_reel_tnd,
+        "droit_entree_tnd": droit_entree,
+        "prix_total_par_unite_tnd": total,
+        "donnee_manquante": [],
+        "statut": "STRUCTURE_VALIDEE_CHIFFRES_A_CONFIRMER_PAR_MARQUE",
+        "avertissement": (
+            f"Structure de calcul (base + extension + droit d'entrée) validée "
+            f"pour {nom_marque} sur un CAPEX réel fourni. Réutilisable pour "
+            "une autre marque UNIQUEMENT si son propre CAPEX réel, sa propre "
+            "répartition base/extension et son propre % de droit d'entrée "
+            "sont fournis — jamais en recopiant ceux d'une autre marque."
+        ),
+    }
+
+
+def paliers_solutions(
+    prix_reference_tnd: float,
+    cout_variable_reel_tnd: float,
+    marges_cibles_pct: dict[str, float],
+) -> dict[str, Any]:
+    """Construit des paliers d'abonnement ASPAR Solutions autour d'un prix
+    de référence déjà validé (ADR 0005 : 90 TND/mois/point de vente, marge
+    30% sur coût variable réel 65.3 TND/mois) plutôt qu'un prix unique.
+
+    `marges_cibles_pct` : dict nom_palier -> marge cible en % au-dessus du
+    coût variable réel, ex. {"Essentiel": 30, "Croissance": 60, "Elite": 100}.
+    Les NOMS de palier passés ici sont des PROPOSITIONS à valider par le CEO
+    — cette fonction ne décide jamais du contenu fonctionnel de chaque
+    palier (crédits IAP, heures de support, intégrations) : elle vérifie
+    uniquement qu'un prix proposé pour un palier dégage bien la marge cible
+    au-dessus du coût variable réel, jamais un prix qui repasserait sous le
+    coût réel comme l'ancien prix à 30 TND (ADR 0005).
+    """
+    if cout_variable_reel_tnd <= 0:
+        return {"paliers": None, "erreur": "cout_variable_reel_tnd doit être > 0"}
+
+    paliers: dict[str, Any] = {}
+    for nom, marge_pct in marges_cibles_pct.items():
+        prix_palier = round(cout_variable_reel_tnd * (1 + marge_pct / 100), 2)
+        paliers[nom] = {
+            "prix_mensuel_tnd": prix_palier,
+            "marge_cible_pct": marge_pct,
+            "marge_tnd": round(prix_palier - cout_variable_reel_tnd, 2),
+            "au_dessus_du_prix_reference": prix_palier >= prix_reference_tnd,
+        }
+
+    return {
+        "prix_reference_tnd": prix_reference_tnd,
+        "cout_variable_reel_tnd": cout_variable_reel_tnd,
+        "paliers": paliers,
+        "statut": "NOMS_ET_CONTENU_FONCTIONNEL_A_VALIDER_PAR_LE_CEO",
+        "avertissement": (
+            "Seuls les prix et marges sont calculés ici, jamais le contenu "
+            "fonctionnel (crédits IAP, heures de support, intégrations) de "
+            "chaque palier — ça reste une décision produit du CEO, pas un "
+            "chiffre dérivable. Les noms de palier sont des propositions."
+        ),
+    }
+
+
 def devis_chantier(
     debourse_sec_tnd: float | None,
     marge_pct: float,

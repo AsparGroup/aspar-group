@@ -48,10 +48,19 @@ class BusinessModelState(TypedDict, total=False):
 
 
 class DevisChantierState(TypedDict, total=False):
-    """État pour le calcul de devis Building — logique portée du SOP réel
-    MG Contracting (déboursé sec + marge, 4 lots, durée standard par taille).
-    MG Contracting reste le client dont ce SOP est issu — pas les données du
-    devis lui-même, qui appartiennent à chaque chantier ASPAR Building.
+    """État pour le calcul de devis Building — logique de déboursé sec + marge,
+    4 lots, durée standard par taille de chantier.
+
+    STATUT DE LA SOURCE (corrigé le 2026-09-14) : cette logique a été présentée
+    précédemment comme portée d'un "SOP réel MG Contracting" écrit et
+    consultable. Un audit du 2026-09-14 (recherche exhaustive dans
+    AsparGroup/aspar-group, AsparGroup/aspar-agent-os, et GitHub code search
+    sur l'organisation) n'a trouvé AUCUN document écrit de ce SOP nulle part.
+    Les valeurs (marge 10%, durées Petit 45j/Moyen 60j/Grand 75j, 4 lots) sont
+    une donnée ORALE du CEO (Majdi Garbouj), non recoupée par écrit à ce jour
+    — pas un SOP client validé et sourcé. À traiter comme telle tant qu'un
+    document MG Contracting réel n'est pas localisé ou que ce SOP n'est pas
+    formellement rédigé et validé comme référence ASPAR Building.
     """
 
     debourse_sec_tnd: float | None
