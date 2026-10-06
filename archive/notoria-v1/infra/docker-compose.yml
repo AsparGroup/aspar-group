@@ -1,0 +1,142 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
+      mc mb -p local/notoria-inputs || true &&
+      mc mb -p local/notoria-intermediate || true &&
+      mc mb -p local/notoria-outputs || true &&
+      mc mb -p local/notoria || true
+      "
+
+  orchestrator-api:
+    build:
+      context: ..
+      dockerfile: services/orchestrator-api/Dockerfile
+    environment:
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      ORCHESTRATOR_MAX_RETRIES: ${ORCHESTRATOR_MAX_RETRIES:-2}
+      WORKER_TIMEOUT_SECONDS: ${WORKER_TIMEOUT_SECONDS:-15}
+    ports:
+      - "${ORCHESTRATOR_PORT:-8000}:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  worker-tts:
+    build:
+      context: ..
+      dockerfile: services/worker-tts/Dockerfile
+    environment:
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      S3_REGION: ${S3_REGION}
+      MINIO_BUCKET: ${MINIO_BUCKET:-notoria}
+      USE_FAKE_TTS: ${USE_FAKE_TTS:-true}
+    ports:
+      - "${WORKER_TTS_PORT:-8101}:80"
+
+  worker-video:
+    build:
+      context: ..
+      dockerfile: services/worker-video/Dockerfile
+    environment:
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      S3_REGION: ${S3_REGION}
+      MINIO_BUCKET: ${MINIO_BUCKET:-notoria}
+      USE_FAKE_VIDEO: ${USE_FAKE_VIDEO:-true}
+      CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:-0}
+    ports:
+      - "${WORKER_VIDEO_PORT:-8102}:80"
+
+  worker-lipsync:
+    build:
+      context: ..
+      dockerfile: services/worker-lipsync/Dockerfile
+    environment:
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      S3_REGION: ${S3_REGION}
+      MINIO_BUCKET: ${MINIO_BUCKET:-notoria}
+      USE_FAKE_LIPSYNC: ${USE_FAKE_LIPSYNC:-true}
+    ports:
+      - "${WORKER_LIPSYNC_PORT:-8103}:80"
+
+  worker-enhance:
+    build:
+      context: ..
+      dockerfile: services/worker-enhance/Dockerfile
+    environment:
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      S3_REGION: ${S3_REGION}
+      MINIO_BUCKET: ${MINIO_BUCKET:-notoria}
+      USE_FAKE_ENHANCE: ${USE_FAKE_ENHANCE:-true}
+    ports:
+      - "${WORKER_ENHANCE_PORT:-8104}:80"
+
+  worker-qa:
+    build:
+      context: ..
+      dockerfile: services/worker-qa/Dockerfile
+    environment:
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      S3_REGION: ${S3_REGION}
+      MINIO_BUCKET: ${MINIO_BUCKET:-notoria}
+      USE_FAKE_QA: ${USE_FAKE_QA:-true}
+    ports:
+      - "${WORKER_QA_PORT:-8105}:80"

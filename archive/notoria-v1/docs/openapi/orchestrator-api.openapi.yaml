@@ -1,0 +1,84 @@
+openapi: 3.0.3
+info:
+  title: NOTORIA Orchestrator API
+  version: 0.6.0
+paths:
+  /v1/jobs:
+    post:
+      summary: Create asynchronous rendering job and execute pipeline
+      responses:
+        '202':
+          description: Accepted
+  /v1/jobs/{job_id}:
+    get:
+      summary: Get job status by id
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not found
+  /v1/jobs/{job_id}/retry:
+    post:
+      summary: Retry a job from orchestrator
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /webhooks/n8n/order_created:
+    post:
+      summary: n8n intake webhook for order_created
+      responses:
+        '200':
+          description: Job created
+  /registry/services:
+    get:
+      summary: List registry services
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create registry service
+      responses:
+        '201':
+          description: Created
+        '409':
+          description: Duplicate service_name
+  /registry/services/{id}:
+    patch:
+      summary: Patch registry service by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not found
+        '409':
+          description: Duplicate service_name
+  /healthz:
+    get:
+      summary: Health endpoint
+      responses:
+        '200':
+          description: OK
+  /metrics:
+    get:
+      summary: Prometheus metrics endpoint
+      responses:
+        '200':
+          description: OK

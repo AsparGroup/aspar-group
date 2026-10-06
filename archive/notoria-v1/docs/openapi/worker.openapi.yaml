@@ -1,0 +1,29 @@
+openapi: 3.0.3
+info:
+  title: NOTORIA Generic Worker API
+  version: 0.4.0
+paths:
+  /health:
+    get:
+      summary: Standard worker health endpoint
+      responses:
+        '200':
+          description: OK
+  /generate:
+    post:
+      summary: Generate worker artifact from JobRequest and return JobResult
+      responses:
+        '200':
+          description: OK
+  /status:
+    post:
+      summary: Optional status lookup by job_id
+      responses:
+        '200':
+          description: OK
+  /metrics:
+    get:
+      summary: Prometheus metrics endpoint
+      responses:
+        '200':
+          description: OK

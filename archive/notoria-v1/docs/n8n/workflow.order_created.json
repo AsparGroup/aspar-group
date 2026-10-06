@@ -1,0 +1,82 @@
+{
+  "name": "NOTORIA - Order Created",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "notoria-order",
+        "httpMethod": "POST",
+        "responseMode": "onReceived"
+      },
+      "id": "WebhookForm",
+      "name": "Webhook Form",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [220, 260]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://orchestrator-api:8000/webhooks/n8n/order_created",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customer_id\": $json.customer_id,\n  \"avatar_id\": $json.avatar_id,\n  \"script\": $json.script,\n  \"language\": $json.language || \"fr\",\n  \"format\": $json.format || \"mp4\",\n  \"plan\": $json.plan\n}"
+      },
+      "id": "CallOrchestrator",
+      "name": "Call Orchestrator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [520, 260]
+    },
+    {
+      "parameters": {
+        "channel": "#notoria-ops",
+        "text": "=Nouvelle commande NOTORIA acceptée. job_id={{$json.job_id}} status={{$json.status_url}}"
+      },
+      "id": "SlackNotify",
+      "name": "Notify Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [820, 180]
+    },
+    {
+      "parameters": {
+        "subject": "NOTORIA job créé",
+        "text": "=Commande acceptée. job_id={{$json.job_id}}\nStatus URL={{$json.status_url}}"
+      },
+      "id": "EmailNotify",
+      "name": "Notify Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [820, 340]
+    }
+  ],
+  "connections": {
+    "Webhook Form": {
+      "main": [
+        [
+          {
+            "node": "Call Orchestrator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Notify Slack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

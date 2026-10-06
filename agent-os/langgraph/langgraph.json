@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "aspar_agent": "./src/aspar_agent/graph.py:graph"
+  },
+  "env": ".env"
+}
