@@ -16,7 +16,7 @@ All new agentic work must start from this repository and resolve current context
 ## Migration provenance
 
 - Verified LangGraph/LangChain gate source: `mynotoriastudio-cmd/Notoria-studio` commit `6124e45037950f4424eef5ce4f8a1f5cbd7f0e0f`.
-- Legacy NOTORIA V1 source: `ASPAR-SOLUTIONS/aspar-group` commit `8486a7d577631fca6434fcac33217c870d629c9d`.
+- Legacy NOTORIA V1 source: `AsparGroup/aspar-group` commit `8486a7d577631fca6434fcac33217c870d629c9d`.
 - Existing Claude agents source: branch `claude/aspar-social-media-pipeline-756wh`.
 
 The old Airtable/Softr franchise-MVP description is obsolete and must not be used as current architecture.

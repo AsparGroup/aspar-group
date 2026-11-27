@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ASPAR AGENT</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/vendor/model-viewer.min.js"></script>
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <nav class="sidebar" aria-label="Navigation principale">
+      <div class="brand" aria-label="ASPAR AGENT"><span class="logo">Λ</span><span class="brand-name">ASPAR AGENT</span></div>
+      <a class="nav-item" href="#assistant" data-view="assistant">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg><span>Assistant</span>
+      </a>
+      <a class="nav-item" href="#projet" data-view="projet">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z M9 10h6 M9 14h6 M9 18h4"/></svg><span>Mon projet</span>
+      </a>
+      <a class="nav-item" href="#maquette" data-view="maquette">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z M12 12l8-4.5 M12 12v9 M12 12L4 7.5"/></svg><span>Ma maquette 3D</span>
+      </a>
+      <a class="nav-item" href="#compte" data-view="compte">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span>Mon compte</span>
+      </a>
+      <div class="session">
+        <span id="user-email" class="email"></span>
+        <a href="/cdn-cgi/access/logout" class="logout">Se déconnecter</a>
+      </div>
+    </nav>
+
+    <main>
+      <section id="view-assistant" class="view" aria-labelledby="h-assistant">
+        <h1 id="h-assistant">Assistant</h1>
+        <p class="hint">Décrivez votre projet ou posez vos questions. Pour un devis ou un délai, l'équipe ASPAR vous répond via « Mon compte ».</p>
+        <div id="chat-log" class="chat-log" aria-live="polite"></div>
+        <form id="chat-form" class="chat-form">
+          <label for="chat-input" class="sr-only">Votre message</label>
+          <textarea id="chat-input" rows="2" maxlength="4000" placeholder="Votre message…" required></textarea>
+          <button type="submit" id="chat-send">Envoyer</button>
+        </form>
+      </section>
+
+      <section id="view-projet" class="view" aria-labelledby="h-projet" hidden>
+        <h1 id="h-projet">Mon projet</h1>
+        <p class="hint">Ces informations aident l'assistant et l'équipe ASPAR à préparer votre projet.</p>
+        <form id="projet-form" class="projet-form">
+          <label>Nom du projet<input name="nom" maxlength="120"></label>
+          <label>Activité<input name="activite" maxlength="120" placeholder="Café, centre esthétique, boutique…"></label>
+          <label>Ville<input name="ville" maxlength="80"></label>
+          <label>Surface (m²)<input name="surface_m2" type="number" min="0" max="100000" step="any"></label>
+          <label>Budget indicatif<input name="budget" maxlength="120"></label>
+          <label>Style souhaité<input name="style" maxlength="300"></label>
+          <label class="wide">Remarques<textarea name="remarques" rows="4" maxlength="2000"></textarea></label>
+          <div class="actions wide"><button type="submit">Enregistrer</button><span id="projet-status" role="status"></span></div>
+        </form>
+      </section>
+
+      <section id="view-maquette" class="view" aria-labelledby="h-maquette" hidden>
+        <h1 id="h-maquette">Ma maquette 3D</h1>
+        <div class="maquette-bar">
+          <label for="maquette-select">Maquette</label>
+          <select id="maquette-select"></select>
+          <button type="button" id="maquette-refresh">Actualiser</button>
+        </div>
+        <p id="maquette-empty" class="hint" hidden>Aucune maquette pour l'instant. Elle apparaîtra ici dès que l'équipe ASPAR l'aura déposée.</p>
+        <model-viewer id="viewer" camera-controls touch-action="pan-y" shadow-intensity="0.6" exposure="1" alt="Maquette 3D de votre projet" hidden></model-viewer>
+        <p class="hint">Faites glisser pour tourner, molette ou pincement pour zoomer, clic droit ou deux doigts pour déplacer.</p>
+      </section>
+
+      <section id="view-compte" class="view" aria-labelledby="h-compte" hidden>
+        <h1 id="h-compte">Mon compte</h1>
+        <p>Votre compte client ASPAR OS regroupe vos documents, devis et factures. Il s'ouvre dans un nouvel onglet : connectez-vous avec vos propres identifiants.</p>
+        <a id="portal-link" class="button" href="https://client.aspar.group/my" target="_blank" rel="noopener noreferrer">Ouvrir mon compte ASPAR OS</a>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

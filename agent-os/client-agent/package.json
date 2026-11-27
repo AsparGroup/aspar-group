@@ -1,0 +1,10 @@
+{
+  "name": "aspar-agent-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "npx -y wrangler@4.169.0 deploy --dry-run --outdir dist",
+    "deploy": "npx -y wrangler@4.169.0 deploy"
+  }
+}

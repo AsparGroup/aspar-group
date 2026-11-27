@@ -4,52 +4,47 @@ Use this file only for concise continuation context between substantial sessions
 
 ## ACTIVE HANDOFF
 
-**Date:** 2026-09-12
-**From:** ChatGPT
-**To:** Claude Code / next ASPAR agent
+**Date:** 2026-11-27
+**From:** Claude Code (cloud session "Contrôler mon PC")
+**To:** Claude Code on the CEO's Mac / next ASPAR agent
 
 ### Objective
-Use `AsparGroup/aspar-group` as the canonical shared repository. The active pre-execution runtime is `agent-os/langgraph/`; all local Claude Code/MCP and downstream Canva/image/social execution must pass through it before side effects.
+Keep `AsparGroup/aspar-group` the single durable memory. This session audited that memory against the live master file and corrected what could be corrected from the repository.
 
 ### Read first
-1. `ASPAR_CONTEXT.md`
-2. `CURRENT_STATE.md`
-3. `WORKBOARD.md`
-4. `agent-os/README.md`
-5. Relevant brand `SOURCE_LOCK.md`
+1. `STATE_ROUTER.md`, then `ETAT_LIVE_ASPAR.md` on Drive (step 0 of the reading order)
+2. `ASPAR_CONTEXT.md`
+3. `CURRENT_STATE.md`
+4. `WORKBOARD.md`
+5. `agent-os/README.md`
+6. Relevant brand `SOURCE_LOCK.md`
 
 ### What changed
-- Established the shared `agent-os/` location in ASPAR Group.
-- Migrated the LangGraph/LangChain gate from `mynotoriastudio-cmd/Notoria-studio` source commit `6124e45037950f4424eef5ce4f8a1f5cbd7f0e0f`.
-- Preserved the former NOTORIA V1 monorepo under `archive/notoria-v1/` as non-active legacy.
-- Brought existing Claude agent definitions under `.claude/agents/` in the same repository.
-- Migrated canonical ASPAR context, domain docs, ADRs and Majdi SOURCE LOCK into the repository root.
-- Added target-repository CI for the migrated gate.
-
-### Verification evidence
-GitHub Actions run `34694733008`, job `103556151210`, succeeded on Python 3.12:
-- `8 passed in 0.39s`
-- smoke: `{"pass_path": "PASS", "status": "ok", "stop_path": "STOP"}`
-
-A prior RED run failed specifically because the canonical root Majdi SOURCE LOCK was absent; migration of that source made the tests pass without relaxing validation.
+- `CURRENT_STATE.md` rewritten from the 2026-09-12 snapshot: what `agent-os/langgraph/` really contains, Odoo Cloud as the single Odoo target, instances declared by the CEO, known memory conflicts.
+- Repository name aligned on `AsparGroup/aspar-group` in `CURRENT_STATE.md`, `README.md` and `agent-os/README.md`. The historical plan `docs/superpowers/plans/2026-09-12-consolidate-agent-os.md` keeps its original wording on purpose.
+- `agent-os/README.md` reading order now starts at step 0, like `CLAUDE.md` and `AGENTS.md`.
+- Verified on 2026-11-27 in a cloud session: `42 passed`, smoke `{"pass_path": "PASS", "status": "ok", "stop_path": "STOP"}` (Python 3.13).
+- Built `agent-os/client-agent/`: the client-facing ASPAR AGENT on Cloudflare (Worker, Access, Workers AI, KV). 20 tests and a browser check pass; not deployed. `agent.aspar.group` currently only redirects to a static page.
 
 ### Decisions made
-- Canonical repository: `AsparGroup/aspar-group`.
-- Shared active runtime location: `agent-os/`.
-- Active gate: `agent-os/langgraph/`.
-- Claude agents: `.claude/agents/`, using the same root context/runtime.
-- Legacy NOTORIA video/TTS/lipsync runtime must not be activated by default.
-- SOURCE LOCK remains mandatory; STOP bypasses plan/execute.
-- `execute` remains preflight-only; actual external side effects stay downstream.
+- 2026-11-27, CEO (in chat): set Notion aside for now. ADR 0001 stands; no Notion work until the CEO says otherwise. Recorded in `CURRENT_STATE.md`.
 
-### Remaining blocker
-Local Mac/Claude Code/MCP caller wiring still requires local verification. The repository migration itself is CI-verified.
+### Files changed
+`CURRENT_STATE.md`, `HANDOFF.md`, `README.md`, `agent-os/README.md`, `agent-os/client-agent/` (new).
+`ETAT_LIVE_ASPAR.md` was read (REVISION 2, no active lock) and **not** modified.
+
+### Blockers — decisions for the CEO
+1. Update `ETAT_LIVE_ASPAR.md` §18 and the personal "Pilote technique" instructions, which still make Notion central and live outside this repository.
+2. Confirm whether ASPAR OS is the Odoo behind `client.aspar.group` (its login page carries that name), then record the COO / ASPAR AGENT / ERP client / ASPAR OS split in `ETAT_LIVE_ASPAR.md` and, if it is a lasting decision, in a new ADR.
+3. The Mac working copy (11 tests, `widget_snapshot`) has diverged from this repository (42 tests, no `widget_snapshot`). Decide which one is the base and push the missing side.
+4. `WORKBOARD.md` NOW items do not mention the active task listed in `ETAT_LIVE_ASPAR.md`. Arbitrate the priority.
+5. Second-hand and unverified: a DNS check in another session reportedly showed `www.aspar.group` behind a tunnel to a local Odoo, which would contradict the Odoo-Cloud-only decision. Verify.
 
 ### Next exact action
-1. Sync `AsparGroup/aspar-group` locally after PR #4 is merged.
-2. From `agent-os/langgraph/`, install `.[dev,postgres]`, run pytest and smoke, then start `langgraph dev --no-browser`.
-3. Point Claude Code/MCP and downstream executors at this gate.
-4. Do not bypass SOURCE LOCK for visual or factual-claim tasks.
+0. Deploy `agent-os/client-agent/` following its README (Access application, KV namespace, removal of the current redirect, then publish).
+1. From the Mac, compare the working copy with `origin/main` and push whatever is missing from `agent-os/langgraph/`.
+2. Run `pytest` and the smoke runner there and update the Verification block of `CURRENT_STATE.md`.
+3. Once the CEO answers the blockers above, update `ETAT_LIVE_ASPAR.md` following the lock protocol in `STATE_ROUTER.md`.
 
 ## HANDOFF TEMPLATE
 
