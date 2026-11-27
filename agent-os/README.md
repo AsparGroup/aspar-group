@@ -1,6 +1,6 @@
 # ASPAR Agent OS
 
-`agent-os/` is the shared execution area for Claude Code, ChatGPT and future ASPAR agents inside the canonical repository `ASPAR-SOLUTIONS/aspar-group`.
+`agent-os/` is the shared execution area for Claude Code, ChatGPT and future ASPAR agents inside the canonical repository `AsparGroup/aspar-group`.
 
 ## Active runtime
 
@@ -15,6 +15,7 @@ The `execute` node is intentionally preflight-only. Canva, image, publishing, Od
 ## Shared context
 
 Before substantial work, agents read repository-root context in this order:
+0. `STATE_ROUTER.md`, then the master file it points to (`ETAT_LIVE_ASPAR.md` on Drive) — the repo alone never holds the live state
 1. `ASPAR_CONTEXT.md`
 2. `CURRENT_STATE.md`
 3. `WORKBOARD.md`
