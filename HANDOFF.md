@@ -36,7 +36,7 @@ Keep `AsparGroup/aspar-group` the single durable memory. This session audited th
 1. Update `ETAT_LIVE_ASPAR.md` §18 and the personal "Pilote technique" instructions, which still make Notion central and live outside this repository.
 2. Give the address of ASPAR OS and confirm `agent.aspar.group` and `client.aspar.group`, then record the COO / ASPAR AGENT / ERP client / ASPAR OS split in `ETAT_LIVE_ASPAR.md` and, if it is a lasting decision, in a new ADR.
 3. The Mac working copy (11 tests, `widget_snapshot`) has diverged from this repository (42 tests, no `widget_snapshot`). Decide which one is the base and push the missing side.
-4. `WORKBOARD.md` NOW items do not mention REEFI, the active task in `ETAT_LIVE_ASPAR.md`. Arbitrate the priority.
+4. `WORKBOARD.md` NOW items do not mention the active task listed in `ETAT_LIVE_ASPAR.md`. Arbitrate the priority.
 5. Second-hand and unverified: a DNS check in another session reportedly showed `www.aspar.group` behind a tunnel to a local Odoo, which would contradict the Odoo-Cloud-only decision. Verify.
 
 ### Next exact action

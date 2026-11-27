@@ -2,7 +2,7 @@
 
 Snapshot: 2026-11-27
 
-The live operational state is **not** in this file. It lives in `ETAT_LIVE_ASPAR.md` (see `STATE_ROUTER.md`) and must not be duplicated here. At this snapshot its header read `REVISION: 2`, last update 2026-10-06 by CODEX, active task REEFI (POS installer acceptance), no active lock.
+The live operational state is **not** in this file. It lives in `ETAT_LIVE_ASPAR.md` (see `STATE_ROUTER.md`) and must not be duplicated here. At this snapshot its header read `REVISION: 2`, last update 2026-10-06 by CODEX, no active lock. This repository is public: never copy client names, tasks or operational details from that file here.
 
 ## Business priority
 ASPAR is in **monetization-before-expansion** mode.
