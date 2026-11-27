@@ -42,7 +42,7 @@ Near-term personal income target discussed: **5,000 TND/month**. This is a comme
 - **Blender:** 3D production.
 - **Claude Code/local stack:** local execution and code/files/MCP work.
 - **Supabase:** backend actually used for the editorial cycle and described as control plane in `ETAT_LIVE_ASPAR.md`; still not mandatory for other workflows.
-- **Notion:** outside core ([ADR 0001](decisions/0001-notion-out-of-core.md)); legacy/reference/demo/client-use only.
+- **Notion:** outside core ([ADR 0001](decisions/0001-notion-out-of-core.md)) and set aside for now by the CEO (2026-11-27); legacy/reference only.
 
 ## Agent OS — what `agent-os/langgraph/` contains (checked in code, 2026-11-27)
 - **Pre-execution gate** (`graph.py`, `nodes.py`): SOURCE_LOCK PASS/STOP; the `execute` node stays preflight-only.
@@ -68,7 +68,7 @@ None of these appear in `ETAT_LIVE_ASPAR.md` yet.
 ## Known memory conflicts
 Rule: active ADRs of this repository prevail over older chat or document content.
 
-1. **Notion.** [ADR 0001](decisions/0001-notion-out-of-core.md) (2026-09-11) prevails. Two older statements predate it and live outside this repository, so their owner must update them: `ETAT_LIVE_ASPAR.md` §18 (2026-09-06: Notion as central memory, Drive abandoned, which also contradicts `STATE_ROUTER.md`), and the CEO's personal "Pilote technique" instructions (2026-08-15: Notion as ASPAR AGENT's brain, Promptage Blender queue in Notion). Reading consistent with ADR 0001, to be confirmed by the CEO: Notion stays valid as a client-facing interface and legacy reference; internal study, decision and memory live in this repository and Odoo; Blender renders are triggered by the study pipeline under the zonage gate rather than by a Notion queue.
+1. **Notion: settled for now.** On 2026-11-27 the CEO said to set Notion aside for the moment, and [ADR 0001](decisions/0001-notion-out-of-core.md) (2026-09-11) stands. Agents do not read or write Notion, and create no Notion page or database, unless the CEO asks; existing Notion content is preserved, not deleted. Two older statements still make Notion central and live outside this repository, so their owner must update them: `ETAT_LIVE_ASPAR.md` §18 (2026-09-06: Notion as central memory, Drive abandoned, which also contradicts `STATE_ROUTER.md`), and the CEO's personal "Pilote technique" instructions (2026-08-15: Notion as ASPAR AGENT's brain, Promptage Blender queue in Notion). Until then both are obsolete. Blender renders run from the study pipeline under the zonage gate, not from a Notion queue.
 2. **Mac copy vs this repository.** `ETAT_LIVE_ASPAR.md` (2026-10-06) describes a Mac working copy with 11 passing tests and a `widget_snapshot` graph command. Neither matches this repository (42 tests, no `widget_snapshot`), so the Mac copy has diverged from the canonical repository.
 
 ## Legacy NOTORIA

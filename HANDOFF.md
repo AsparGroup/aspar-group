@@ -26,14 +26,14 @@ Keep `AsparGroup/aspar-group` the single durable memory. This session audited th
 - Verified on 2026-11-27 in a cloud session: `42 passed`, smoke `{"pass_path": "PASS", "status": "ok", "stop_path": "STOP"}` (Python 3.13).
 
 ### Decisions made
-None new. The Notion conflict is documented in `CURRENT_STATE.md` using the repository rule that active ADRs prevail; the reading proposed there still needs the CEO's confirmation.
+- 2026-11-27, CEO (in chat): set Notion aside for now. ADR 0001 stands; no Notion work until the CEO says otherwise. Recorded in `CURRENT_STATE.md`.
 
 ### Files changed
 `CURRENT_STATE.md`, `HANDOFF.md`, `README.md`, `agent-os/README.md`.
 `ETAT_LIVE_ASPAR.md` was read (REVISION 2, no active lock) and **not** modified.
 
 ### Blockers — decisions for the CEO
-1. Confirm or correct the Notion reading in `CURRENT_STATE.md` (Known memory conflicts, item 1). If confirmed, update `ETAT_LIVE_ASPAR.md` §18 and the personal "Pilote technique" instructions, which live outside this repository.
+1. Update `ETAT_LIVE_ASPAR.md` §18 and the personal "Pilote technique" instructions, which still make Notion central and live outside this repository.
 2. Give the address of ASPAR OS and confirm `agent.aspar.group` and `client.aspar.group`, then record the COO / ASPAR AGENT / ERP client / ASPAR OS split in `ETAT_LIVE_ASPAR.md` and, if it is a lasting decision, in a new ADR.
 3. The Mac working copy (11 tests, `widget_snapshot`) has diverged from this repository (42 tests, no `widget_snapshot`). Decide which one is the base and push the missing side.
 4. `WORKBOARD.md` NOW items do not mention REEFI, the active task in `ETAT_LIVE_ASPAR.md`. Arbitrate the priority.
