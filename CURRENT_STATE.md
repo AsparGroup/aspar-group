@@ -51,19 +51,20 @@ Near-term personal income target discussed: **5,000 TND/month**. This is a comme
 - **Building→Blender node** (`blender_tools.py`): runs between the dimensioning and CAPEX phases, writes a bpy script and runs `blender --background --python`. It is a deliverable, not a gate: it never blocks the study, and it refuses to render unless `zonage_statut == "Validé"` and `fichiers_reference` is non-empty.
 - **Odoo sync** (`odoo_sync.py`): writes computed study results into plain Odoo Studio fields (suggested model `x_etude_business`), the only place verdicts are displayed ([ADR 0004](decisions/0004-notion-no-formulas.md)). It calls `pipeline_cli`, which is not in this repository. Whether the Studio model exists in Odoo Cloud is not verified.
 - **Business-model pipeline** (`business_model_*.py`): models ASPAR's own lines (Solutions, Cabinet, Building) and produces a diagnostic report for the CEO; it gates nothing.
+- **Client web app** (`agent-os/client-agent/`, separate from the gate): the client-facing ASPAR AGENT on Cloudflare (Worker, Access, Workers AI, KV). 20 tests and a browser check pass; not deployed. See its README.
 
 ## Verification
 2026-11-27, cloud session, Python 3.13, fresh virtual environment from `pyproject.toml` runtime dependencies plus pytest: `42 passed`; smoke `{"pass_path": "PASS", "status": "ok", "stop_path": "STOP"}`.
 
 Not re-verified in this snapshot: the GitHub Actions run on Python 3.12, `langgraph dev`, the optional PostgreSQL checkpointer.
 
-## Instances and surfaces — declared by the CEO on 2026-11-27, not verified in any tool
+## Instances and surfaces — declared by the CEO on 2026-11-27, public URLs checked the same day
 None of these appear in `ETAT_LIVE_ASPAR.md` yet.
 - **COO:** the CEO's own DSH instance (desktop app "ASPAR Group", Λ logo, project folder `asparincaspar`), internal use only. `ETAT_LIVE_ASPAR.md` also uses "mode COO" for CEO-delegated arbitration (2026-09-14); the link between the two usages is not established.
-- **ASPAR AGENT (clients):** a separate DSH instance for clients. Address `agent.aspar.group` was relayed second-hand and needs confirmation.
-- **ERP client:** `client.aspar.group` (stated by the CEO).
-- **ASPAR OS:** the CEO's own internal tool; address unknown.
-- `www.aspar.group`: in September `ETAT_LIVE_ASPAR.md` listed it as a domain still to be bought by the CEO; current DNS and hosting not verified.
+- **ASPAR AGENT (clients):** meant as the clients' dedicated instance. `agent.aspar.group` only answers with a Cloudflare redirect to `www.aspar.group/app/?assistant=1`, a static page with no assistant; nothing runs behind it. A Cloudflare-hosted replacement is ready in `agent-os/client-agent/` (built and tested, not deployed).
+- **ERP client:** `client.aspar.group` (stated by the CEO), an Odoo login page titled « ASPAR OS ».
+- **ASPAR OS:** the CEO's own internal tool according to the CEO. The Odoo behind `client.aspar.group` carries that name; whether they are the same instance is to be confirmed.
+- `www.aspar.group`: online, served by Odoo behind Cloudflare; `aspar.group` redirects to it.
 
 ## Known memory conflicts
 Rule: active ADRs of this repository prevail over older chat or document content.

@@ -12,6 +12,10 @@ Required flow:
 
 The `execute` node is intentionally preflight-only. Canva, image, publishing, Odoo and other side effects stay downstream and must not bypass SOURCE LOCK.
 
+## Client-facing app
+
+`agent-os/client-agent/` is the client-facing ASPAR AGENT, hosted on Cloudflare behind Cloudflare Access. It is bounded (no tools, no access to Odoo or files) and is not part of the pre-execution gate. See its README for deployment.
+
 ## Shared context
 
 Before substantial work, agents read repository-root context in this order:

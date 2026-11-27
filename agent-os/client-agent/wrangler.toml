@@ -1,0 +1,31 @@
+name = "aspar-agent-client"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# Never reachable on *.workers.dev: only on the custom domain, behind Cloudflare Access.
+workers_dev = false
+preview_urls = false
+
+# Enable once the current redirect on agent.aspar.group has been removed
+# and the Access application exists (see README.md, "Deploy").
+# routes = [{ pattern = "agent.aspar.group", custom_domain = true }]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+# The Worker checks the Access token before serving any file, the UI included.
+run_worker_first = true
+
+[ai]
+binding = "AI"
+
+[[kv_namespaces]]
+binding = "CLIENT_DATA"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[vars]
+# Both are required; the Worker answers 503 while either is empty.
+ACCESS_TEAM_DOMAIN = ""   # "<team>.cloudflareaccess.com"
+ACCESS_AUD = ""           # Application Audience (AUD) tag of the Access application
+AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+CLIENT_PORTAL_URL = "https://client.aspar.group"
